@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Azure Bay Hotel Malta – Concierge</title>
+<style>
+:root{--bg:#f3ece0;--surface:#fffdf8;--ink:#14283a;--muted:#66727d;--sea:#0e3b5c;--sea2:#1b5a85;--red:#b3262e;--line:#ddd2bd;--bot:#ffffff;--user:#0e3b5c;--userink:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1722;--surface:#112233;--ink:#e9eef3;--muted:#95a3b0;--sea:#5aa6d6;--sea2:#7fbbe3;--line:#233a4f;--bot:#17304a;--user:#2a7db3;--userink:#fff}}
+:root[data-theme="dark"]{--bg:#0b1722;--surface:#112233;--ink:#e9eef3;--muted:#95a3b0;--sea:#5aa6d6;--sea2:#7fbbe3;--line:#233a4f;--bot:#17304a;--user:#2a7db3;--userink:#fff}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 "Source Serif 4",Georgia,serif;display:flex;justify-content:center}
+.app{width:100%;max-width:760px;height:100%;display:flex;flex-direction:column;background:var(--surface);border-inline:1px solid var(--line)}
+header{padding:16px 20px;background:var(--sea);color:#fff;display:flex;align-items:center;gap:14px}
+header .crest{width:42px;height:42px;border-radius:50%;background:var(--red);display:grid;place-items:center;font:700 20px Georgia,serif}
+header h1{margin:0;font:600 19px/1.2 Georgia,serif;letter-spacing:.2px}
+header small{opacity:.8;font:13px system-ui,sans-serif}
+header .sp{flex:1}
+header button{background:transparent;border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:8px;padding:6px 10px;font:13px system-ui;cursor:pointer}
+#log{flex:1;overflow-y:auto;padding:18px 16px;display:flex;flex-direction:column;gap:12px}
+.m{max-width:84%;padding:11px 15px;border-radius:16px;white-space:pre-wrap;word-wrap:break-word}
+.bot{background:var(--bot);border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:4px}
+.me{background:var(--user);color:var(--userink);align-self:flex-end;border-bottom-right-radius:4px;font-family:system-ui,sans-serif;font-size:15px}
+.typing{color:var(--muted);font:14px system-ui}
+.chips{display:flex;flex-wrap:wrap;gap:8px;align-self:flex-start;max-width:92%}
+.chips button{background:var(--surface);color:var(--sea);border:1px solid var(--sea);border-radius:999px;padding:7px 14px;font:14px system-ui,sans-serif;cursor:pointer}
+.chips button:hover{background:var(--sea);color:var(--surface)}
+form{display:flex;gap:10px;padding:12px 14px;border-top:1px solid var(--line);background:var(--surface)}
+input{flex:1;padding:12px 14px;border:1px solid var(--line);border-radius:12px;font:16px system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+input:focus-visible,button:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+form button{background:var(--red);color:#fff;border:0;border-radius:12px;padding:0 20px;font:600 15px system-ui;cursor:pointer}
+@media (prefers-reduced-motion:no-preference){.m{animation:in .2s ease-out}@keyframes in{from{opacity:0;transform:translateY(4px)}}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="crest" aria-hidden="true">A</div>
+    <div><h1>Azure Bay Hotel Malta</h1><small>Virtual Concierge · Online 24/7</small></div>
+    <div class="sp"></div>
+    <button id="reset" type="button">New chat</button>
+  </header>
+  <main id="log" aria-live="polite"></main>
+  <form id="f" autocomplete="off">
+    <input id="in" type="text" placeholder="Type your message…" aria-label="Message" enterkeyhint="send">
+    <button type="submit">Send</button>
+  </form>
+</div>
+
+<script>
+/* ============ HOTEL DATA — yahan apne hotel ki asli details likhein ============ */
+const H = {
+  name:"Azure Bay Hotel Malta",
+  address:"Triq it-Torri 12, St Julian's STJ 3012, Malta",
+  phone:"+356 2100 0000", email:"reservations@azurebay.example",
+  checkIn:"3:00 PM", checkOut:"11:00 AM",
+  rooms:[
+    {k:"Deluxe Double", p:95,  d:"Comfortable double room, 2 guests, city side."},
+    {k:"Family Room", p:140, d:"Spacious, up to 4 guests, two sleeping areas."},
+    {k:"Superior City View", p:120, d:"Higher floor with panoramic city views."},
+    {k:"Sea View", p:150, d:"Private balcony facing the Mediterranean."},
+    {k:"Jacuzzi Room", p:185, d:"Sea-facing room with in-room jacuzzi."},
+    {k:"Suite", p:260, d:"Separate lounge, premium amenities, sea view, up to 3 guests."}
+  ],
+  services:{
+    breakfast:"Breakfast buffet is served 7:00 AM – 10:30 AM (€14 per person, included in some offers).",
+    spa:"The Spa is open 10:00 AM – 8:00 PM. Massages from €45; advance booking recommended.",
+    gym:"The gym is open 24 hours and free for all guests.",
+    pool:"Rooftop pool is open 8:00 AM – 8:00 PM, towels provided free of charge.",
+    "room service":"Room service is available 24/7 from the in-room menu.",
+    laundry:"Laundry service is available. Shirts/tops from €3, trousers €4, dresses €6. Same-day if handed in before 9 AM.",
+    transfer:"Airport transfer (Malta International Airport) is €25 one way for up to 3 guests. Please book 24 hours ahead.",
+    parking:"Parking is available at €10 per day, subject to availability.",
+    wifi:"Free high-speed WiFi is available throughout the hotel."
+  },
+  offers:["Early Bird: 15% off when you book 30 days ahead.","Stay 3 Pay 2: stay three nights and pay for two.","Honeymoon Package: Sea View or Jacuzzi room with sparkling wine, flowers and late check-out.","Student Discount: 10% off with a valid student ID."],
+  payment:"We accept cash, credit/debit cards, and you may also choose Pay at Hotel on arrival.",
+  cancel:"Free cancellation up to 48 hours before check-in. Later cancellations may be charged the first night.",
+  distances:"From the hotel: Malta International Airport ~15 minutes (about 9 km), Valletta city centre ~20 minutes by car or bus, nearest beach (Spinola Bay) 5 minutes on foot.",
+  faq:{
+    pet:"Small pets are welcome on request (€15 per night). Please let us know before arrival.",
+    tour:"We arrange tours: Valletta, Mdina, Gozo and Blue Lagoon boat trips. I can pass your request to the front desk."
+  }
+};
+
+/* ============ NLP: normalisation, typo correction, intent scoring ============ */
+const I = { // intent -> keywords (English + Roman Urdu)
+ greet:["hello","hi","hey","salam","assalamualaikum","hola","goodmorning","goodevening"],
+ thanks:["thanks","thank","thankyou","shukriya","shukria","jazakallah","appreciated"],
+ bye:["bye","goodbye","allah hafiz","khuda hafiz"],
+ rooms:["room","rooms","price","prices","rate","rates","rent","kiraya","cost","tariff","night","kamra","kamray","qeemat","charges"],
+ book:["book","booking","reserve","reservation","reserv"],
+ timing:["checkin","checkout","timing","timings","arrival","departure","time"],
+ offers:["offer","offers","discount","deal","deals","package","promo","honeymoon","student","early"],
+ payment:["pay","payment","cash","card","credit","debit","paisa","payments"],
+ cancel:["cancel","cancellation","refund","cancelling"],
+ location:["location","distance","airport","beach","centre","center","valletta","far","kitni","door","where","map","direction"],
+ contact:["contact","phone","number","address","email","call","reception","desk","help","support","rabta"],
+ services:["service","services","facility","facilities","amenities","amenity"],
+ breakfast:["breakfast","nashta","buffet","brunch"],
+ spa:["spa","massage"],
+ gym:["gym","fitness","workout"],
+ pool:["pool","swimming"],
+ "room service":["roomservice","dinner","lunch","food","meal"],
+ laundry:["laundry","laundary","washing","dhulai","iron"],
+ transfer:["transfer","taxi","pickup","shuttle","cab"],
+ parking:["parking","park","garage"],
+ wifi:["wifi","internet","wi-fi"],
+ pet:["pet","pets","dog","cat","animal"],
+ tour:["tour","tours","trip","excursion","sightseeing","gozo","mdina"],
+ faq:["faq","faqs","question","questions"]
+};
+const vocab = [...new Set(Object.values(I).flat())];
+const norm = s => s.toLowerCase().replace(/[^a-z0-9\s'\-]/g," ").replace(/\s+/g," ").trim();
+function lev(a,b){const m=a.length,n=b.length;if(Math.abs(m-n)>2)return 9;const d=Array.from({length:m+1},(_,i)=>[i]);for(let j=1;j<=n;j++)d[0][j]=j;
+ for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[m][n]}
+function fix(t){ // typo correction against known vocabulary
+ if(t.length<3||vocab.includes(t)||/\d/.test(t))return t;
+ let best=t,bd=9;const lim=t.length<=5?1:2;
+ for(const w of vocab){const x=lev(t,w);if(x<bd){bd=x;best=w}}
+ return bd<=lim?best:t}
+function detect(text){
+ const toks=norm(text).split(" ").map(fix);
+ const joined=toks.join(" ");const score={};
+ for(const [k,ws] of Object.entries(I))for(const w of ws){
+   if(w.includes(" ")? joined.includes(w) : toks.includes(w)) score[k]=(score[k]||0)+1}
+ if(/check.?in|check.?out/.test(joined))score.timing=(score.timing||0)+2;
+ const e=Object.entries(score).sort((a,b)=>b[1]-a[1]);
+ return {intent:e[0]?e[0][0]:null,all:e.map(x=>x[0])}}
+
+/* ============ UI helpers ============ */
+const log=document.getElementById("log"),inp=document.getElementById("in");
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+let lastIntent=null, greeted=false;
+function add(text,cls){const d=document.createElement("div");d.className="m "+cls;d.textContent=text;log.appendChild(d);log.scrollTop=log.scrollHeight;return d}
+function chips(list){const c=document.createElement("div");c.className="chips";
+ list.forEach(t=>{const b=document.createElement("button");b.type="button";b.textContent=t;b.onclick=()=>{c.remove();send(t)};c.appendChild(b)});
+ log.appendChild(c);log.scrollTop=log.scrollHeight}
+async function say(text,ch){const t=add("Typing…","bot typing");await sleep(350+Math.min(text.length*4,700));t.className="m bot";t.textContent=text;
+ document.querySelectorAll(".chips").forEach(c=>c.remove());if(ch)chips(ch);log.scrollTop=log.scrollHeight}
+const MAIN=["Rooms & Prices","Book a room","Offers","Services","Location","Contact"];
+const pr=r=>`• ${r.k} – €${r.p} per night\n   ${r.d}`;
+
+/* ============ Booking flow ============ */
+const MONTHS=["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+function parseDate(s){
+ s=norm(s);let y,m,d,x;
+ if(x=s.match(/^(\d{4})[-\/ ](\d{1,2})[-\/ ](\d{1,2})$/)){y=+x[1];m=+x[2];d=+x[3]}
+ else if(x=s.match(/^(\d{1,2})[-\/ ](\d{1,2})[-\/ ](\d{4})$/)){d=+x[1];m=+x[2];y=+x[3]}
+ else if(x=s.match(/^(\d{1,2})\s*([a-z]{3})[a-z]*\s*(\d{4})?$/)){d=+x[1];m=MONTHS.indexOf(x[2])+1;y=+(x[3]||new Date().getFullYear());if(!m)return null;
+   if(!x[3]&&new Date(y,m-1,d)<new Date(new Date().toDateString()))y++}
+ else return null;
+ const dt=new Date(y,m-1,d);if(dt.getMonth()!==m-1||dt.getDate()!==d)return null;return dt}
+const fmt=d=>d.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
+let B=null;
+const steps=["in","out","guests","room","name","email","phone","confirm"];
+async function startBooking(){B={step:0,data:{}};await say("With pleasure. Let's reserve your stay. You may type “cancel” at any time to stop.\n\nWhat is your check-in date? (e.g. 25/12/2026 or 25 Dec)")}
+async function bookingStep(text){
+ const t=norm(text);
+ if(/^(cancel|stop|exit|quit|nahi|no)$/.test(t)&&B.step<7){B=null;return say("No problem, your booking request has been cancelled. How else may I help you?",MAIN)}
+ const D=B.data,s=steps[B.step];
+ if(s==="in"){const d=parseDate(text);if(!d)return say("I could not read that date. Please use a format like 25/12/2026 or 25 Dec.");
+   if(d<new Date(new Date().toDateString()))return say("That date has already passed. Please enter a future check-in date.");
+   D.in=d;B.step++;return say(`Check-in: ${fmt(d)}. And your check-out date?`)}
+ if(s==="out"){const d=parseDate(text);if(!d)return say("Please enter the check-out date like 28/12/2026 or 28 Dec.");
+   if(d<=D.in)return say("Check-out must be after check-in. Please enter a later date.");
+   D.out=d;D.nights=Math.round((d-D.in)/864e5);B.step++;return say(`${D.nights} night${D.nights>1?"s":""}. How many guests will be staying?`,["1","2","3","4"])}
+ if(s==="guests"){const n=parseInt(t);if(!n||n<1||n>6)return say("Please enter a number of guests between 1 and 6.");
+   D.guests=n;B.step++;const ok=H.rooms.filter(r=>n<=cap(r));
+   return say("Which room would you like?\n\n"+ok.map(pr).join("\n"),ok.map(r=>r.k))}
+ if(s==="room"){const toks=norm(text).split(" ").map(fix).join(" ");
+   let r=H.rooms.find(r=>norm(r.k)===norm(text))||H.rooms.find(r=>{const w=norm(r.k).split(" ");return w.every(x=>toks.includes(x))})||H.rooms.find(r=>norm(r.k).split(" ").some(x=>x.length>3&&toks.includes(x)));
+   if(!r)return say("Please choose one of our rooms.",H.rooms.filter(r=>D.guests<=cap(r)).map(r=>r.k));
+   if(D.guests>cap(r))return say(`${r.k} accommodates up to ${cap(r)} guests. Please select another room.`,H.rooms.filter(x=>D.guests<=cap(x)).map(x=>x.k));
+   D.room=r;B.step++;return say("Excellent choice. May I have your full name, please?")}
+ if(s==="name"){if(!/^[a-zA-Z][a-zA-Z .'-]{1,}$/.test(text.trim()))return say("Please enter your full name using letters only.");
+   D.name=text.trim().replace(/\b\w/g,c=>c.toUpperCase());B.step++;return say(`Thank you, ${D.name.split(" ")[0]}. What is your email address?`)}
+ if(s==="email"){if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(text.trim()))return say("That email does not look right. Please enter it like name@example.com.");
+   D.email=text.trim();B.step++;return say("And your phone number (with country code)?")}
+ if(s==="phone"){const p=text.replace(/[\s\-()]/g,"");if(!/^\+?\d{8,15}$/.test(p))return say("Please enter a valid phone number, e.g. +356 9999 9999.");
+   D.phone=text.trim();B.step++;const tot=D.nights*D.room.p;
+   return say(`Please review your reservation:\n\nGuest: ${D.name}\nRoom: ${D.room.k}\nCheck-in: ${fmt(D.in)} (from ${H.checkIn})\nCheck-out: ${fmt(D.out)} (by ${H.checkOut})\nGuests: ${D.guests}\nNights: ${D.nights}\nEstimated total: €${tot}\nPayment: at the hotel\n\nShall I confirm this booking?`,["Confirm","Cancel"])}
+ if(s==="confirm"){
+  if(/^(confirm|yes|y|ok|okay|haan|han|ji|done)$/.test(t)){
+   const id="AZB-"+Date.now().toString(36).toUpperCase().slice(-6)+Math.floor(10+Math.random()*90);
+   const nm=D.name.split(" ")[0];B=null;
+   return say(`Your booking is confirmed, ${nm}.\n\nBooking ID: ${id}\n\nPlease keep this ID for check-in. A confirmation will be sent to your email. Thank you for choosing ${H.name}. We look forward to welcoming you.`,["Services","Location","Contact"])}
+  if(/^(cancel|no|n|nahi|stop)$/.test(t)){B=null;return say("Understood, the booking has not been made. Is there anything else I can help with?",MAIN)}
+  return say("Please reply “Confirm” to finalise or “Cancel” to stop.",["Confirm","Cancel"])}}
+function cap(r){return /Family/.test(r.k)?4:/Suite/.test(r.k)?3:2}
+
+/* ============ Answers ============ */
+const A={
+ rooms:()=>["Our rooms and nightly rates:\n\n"+H.rooms.map(pr).join("\n"),["Book a room","Offers","Services"]],
+ timing:()=>[`Check-in is from ${H.checkIn} and check-out is by ${H.checkOut}. Early check-in or late check-out can be arranged subject to availability.`,["Book a room","Location"]],
+ offers:()=>["Current offers:\n\n"+H.offers.map(o=>"• "+o).join("\n"),["Book a room","Rooms & Prices"]],
+ payment:()=>[H.payment,["Cancellation policy","Book a room"]],
+ cancel:()=>[H.cancel,["Book a room","Payment"]],
+ location:()=>[H.distances+`\n\nAddress: ${H.address}`,["Contact","Airport transfer"]],
+ contact:()=>[`${H.name}\nAddress: ${H.address}\nPhone: ${H.phone}\nEmail: ${H.email}\nFront desk: open 24/7`,["Book a room","Services"]],
+ services:()=>["We offer: Breakfast, Spa, Gym, Pool, Room Service, Laundry, Airport Transfer, Parking and free WiFi. Which would you like to know about?",["Breakfast","Spa","Gym","Pool","Laundry","Airport transfer","Parking","WiFi"]],
+ pet:()=>[H.faq.pet,["Services","Book a room"]],
+ tour:()=>[H.faq.tour,["Contact","Services"]],
+ faq:()=>["Frequently asked: pets, breakfast timing, laundry prices and tour bookings. Which one can I explain?",["Pets allowed?","Breakfast timing","Laundry price","Tour booking"]]
+};
+const SV=Object.keys(H.services);
+async function reply(text){
+ if(B)return bookingStep(text);
+ const {intent,all}=detect(text);
+ if(!intent){const n=norm(text);
+   return say("I'm sorry, I did not quite understand that. I can help with rooms and prices, bookings, offers, services, location or contact details.",MAIN)}
+ if(intent==="greet"){ if(greeted&&lastIntent==="greet")return say("How may I assist you today?",MAIN);
+   lastIntent="greet";greeted=true;return say(`Welcome to ${H.name}. I am your virtual concierge. How may I help you today?`,MAIN)}
+ lastIntent=intent;
+ if(intent==="thanks")return say("You are most welcome. It was a pleasure assisting you. Please let me know if you need anything else.");
+ if(intent==="bye")return say(`Thank you for contacting ${H.name}. Have a wonderful day, and we hope to see you soon.`);
+ if(intent==="book")return startBooking();
+ if(SV.includes(intent))return say(H.services[intent],["Book a room","Other services"]);
+ if(A[intent]){const [t,c]=A[intent]();return say(t,c)}}
+
+async function send(text){text=text.trim();if(!text)return;
+ const map={"Rooms & Prices":"rooms","Book a room":"book","Other services":"services","Pets allowed?":"pet","Breakfast timing":"breakfast","Laundry price":"laundry","Tour booking":"tour","Cancellation policy":"cancel","Airport transfer":"transfer"};
+ add(text,"me");inp.value="";
+ await reply(B?text:(map[text]||text))}
+document.getElementById("f").addEventListener("submit",e=>{e.preventDefault();send(inp.value)});
+function init(){log.innerHTML="";B=null;greeted=false;lastIntent=null;
+ say(`Hello and welcome to ${H.name}. I am your virtual concierge. How may I help you today?`,MAIN);greeted=true;lastIntent="greet"}
+document.getElementById("reset").onclick=init;
+init();
+</script>
+</body>
+</html>
